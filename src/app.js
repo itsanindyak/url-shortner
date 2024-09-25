@@ -7,6 +7,6 @@ app.use(express.json());
 
 import urlRoute from "../src/router/url.routers.js";
 
-app.use("/url", urlRoute);
+app.use("/api/v1/url", urlRoute);
 
 export { app };
