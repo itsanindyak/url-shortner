@@ -25,6 +25,36 @@ const createShortUrl = async (req, res) => {
   return res.status(200).json(createdUrl);
 };
 
+const redirectURL = async (req, res) => {
+  const { shortID } = req.params;
+  const existingID = await Url.findOneAndUpdate(
+    {
+      shortID,
+    },
+    {
+      $push: {
+        visitHistory: {
+          timestamp: Date.now(),
+        },
+      },
+    }
+  );
+  if (!existingID) {
+    res.status(400).json({ Error: "Not found" });
+  }
 
+  res.redirect(existingID.redirectURL);
+};
 
-export { createShortUrl };
+const getStatistics = async (req, res) => {
+  const { shortID } = req.params;
+
+  const existingID = await Url.findOne({ shortID });
+  if (!existingID) {
+    res.status(200).json({ error: "ShortID not exist" });
+  }
+
+  res.status(200).json(existingID.visitHistory);
+};
+
+export { createShortUrl, redirectURL, getStatistics };
