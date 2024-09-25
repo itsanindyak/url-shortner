@@ -1,5 +1,6 @@
 import { IDgen } from "../utils/IDGeneration.js";
 import { Url } from "../models/url.models.js";
+import {timeNow} from "../utils/date.js"
 
 const createShortUrl = async (req, res) => {
   const { redirectURL, id } = req.body;
@@ -34,7 +35,7 @@ const redirectURL = async (req, res) => {
     {
       $push: {
         visitHistory: {
-          timestamp: Date.now(),
+          timestamp: timeNow(),
         },
       },
     }
