@@ -1,6 +1,7 @@
 import { IDgen } from "../utils/IDGeneration.js";
 import { Url } from "../models/url.models.js";
 import {timeNow} from "../utils/date.js"
+import {ApiResponce} from "../utils/ApiResponce.js"
 
 const createShortUrl = async (req, res) => {
   const { redirectURL, id } = req.body;
@@ -13,17 +14,17 @@ const createShortUrl = async (req, res) => {
   } else {
     existingID = await Url.findOne({ shortID: id });
     if (existingID) {
-      res.status(400).json({ error: "Already used this id" });
+      res.status(400).json(new ApiResponce(400,existingID,"ID already taken."));
     }
   }
 
-  const createdUrl = await Url.create({
+  const UrlID = await Url.create({
     shortID: id || genid,
     redirectURL,
     visitHistory: [],
   });
 
-  return res.status(200).json(createdUrl);
+  return res.status(200).json(new ApiResponce(200,UrlID,"ShortUrl is generated successfully"));
 };
 
 const redirectURL = async (req, res) => {
@@ -41,7 +42,7 @@ const redirectURL = async (req, res) => {
     }
   );
   if (!existingID) {
-    res.status(400).json({ Error: "Not found" });
+    res.status(400).json(new ApiResponce(400,existingID,"Invalid url request"));
   }
 
   res.redirect(existingID.redirectURL);
@@ -52,10 +53,11 @@ const getStatistics = async (req, res) => {
 
   const existingID = await Url.findOne({ shortID });
   if (!existingID) {
-    res.status(200).json({ error: "ShortID not exist" });
+    res.status(400).json(new ApiResponce(400,existingID,"Invalid url request"));
   }
 
-  res.status(200).json(existingID.visitHistory);
+  res.status(200).json(new ApiResponce(200,existingID.visitHistory,"Visit History fetched successfully"));
 };
 
 export { createShortUrl, redirectURL, getStatistics };
+
