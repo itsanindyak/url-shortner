@@ -1,6 +1,7 @@
 import { IDgen } from "../utils/IDGeneration.js";
 import { Url } from "../models/url.models.js";
-import {timeNow} from "../utils/date.js"
+import { timeNow } from "../utils/date.js";
+import { client } from "../index.js";
 
 const createShortUrl = async (req, res) => {
   const { redirectURL, id } = req.body;
@@ -28,23 +29,32 @@ const createShortUrl = async (req, res) => {
 
 const redirectURL = async (req, res) => {
   const { shortID } = req.params;
-  const existingID = await Url.findOneAndUpdate(
-    {
-      shortID,
-    },
-    {
-      $push: {
-        visitHistory: {
-          timestamp: timeNow(),
-        },
+  let redirectURL = "";
+  let existingID;
+  const result = await client.get(shortID);
+  if (result) {
+    redirectURL = result;
+  } else {
+    existingID = await Url.findOneAndUpdate(
+      {
+        shortID,
       },
+      {
+        $push: {
+          visitHistory: {
+            timestamp: timeNow(),
+          },
+        },
+      }
+    );
+    if (!existingID) {
+      res.status(400).json({ Error: "Not found" });
     }
-  );
-  if (!existingID) {
-    res.status(400).json({ Error: "Not found" });
+    redirectURL = existingID.redirectURL;
+    await client.set(shortID, redirectURL);
   }
 
-  res.redirect(existingID.redirectURL);
+  res.redirect(redirectURL);
 };
 
 const getStatistics = async (req, res) => {
