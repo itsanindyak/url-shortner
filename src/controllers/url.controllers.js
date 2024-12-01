@@ -30,31 +30,38 @@ const createShortUrl = async (req, res) => {
 const redirectURL = async (req, res) => {
   const { shortID } = req.params;
 
-  let existingID;
-  const url = await client.get(`${shortID}:s`);
+  try {
+    const url = await client.get(`${shortID}:s`);
+    const now = timeNow();
 
-  if (url) {
-    res.redirect(url);
-    await client.rpush(`${shortID}:t`, timeNow());
-  } else {
-    existingID = await Url.findOneAndUpdate(
-      {
-        shortID,
-      },
+    if (url) {
+      res.redirect(url); // Respond immediately
+      client.rpush(`${shortID}:t`, timeNow()); // Log visit asynchronously
+      return;
+    }
+
+    const existingID = await Url.findOneAndUpdate(
+      { shortID },
       {
         $push: {
           visitHistory: {
-            timestamp: timeNow(),
+            timestamp: now,
           },
         },
       }
     );
+
     if (!existingID) {
-      res.status(400).json({ Error: "Not found" });
+      return res.status(400).json({ Error: "Not found" });
     }
 
-    await client.set(`${shortID}:s`, existingID.redirectURL, "EX", 7500);
-    res.redirect(existingID.redirectURL);
+    res.redirect(existingID.redirectURL); // Respond immediately
+    await Promise.all([
+      client.set(`${shortID}:s`, existingID.redirectURL, "EX", 3600),
+    ]); // Update cache and log visit asynchronously
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ Error: "Internal Server Error" });
   }
 };
 
