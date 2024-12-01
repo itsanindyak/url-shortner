@@ -29,11 +29,13 @@ const createShortUrl = async (req, res) => {
 
 const redirectURL = async (req, res) => {
   const { shortID } = req.params;
-  let redirectURL = "";
+
   let existingID;
-  const result = await client.get(shortID);
-  if (result) {
-    redirectURL = result;
+  const url = await client.get(`${shortID}:s`);
+
+  if (url) {
+    res.redirect(url);
+    await client.rpush(`${shortID}:t`, timeNow());
   } else {
     existingID = await Url.findOneAndUpdate(
       {
@@ -50,11 +52,10 @@ const redirectURL = async (req, res) => {
     if (!existingID) {
       res.status(400).json({ Error: "Not found" });
     }
-    redirectURL = existingID.redirectURL;
-    await client.set(shortID, redirectURL);
-  }
 
-  res.redirect(redirectURL);
+    await client.set(`${shortID}:s`, existingID.redirectURL, "EX", 7500);
+    res.redirect(existingID.redirectURL);
+  }
 };
 
 const getStatistics = async (req, res) => {
