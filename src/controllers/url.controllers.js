@@ -2,6 +2,7 @@ import { IDgen } from "../utils/IDGeneration.js";
 import { Url } from "../models/url.models.js";
 import { timeNow } from "../utils/date.js";
 import { client } from "../index.js";
+import {ApiResponce} from "../utils/ApiResponce.js"
 
 
 const createShortUrl = async (req, res) => {
@@ -53,7 +54,7 @@ const redirectURL = async (req, res) => {
     );
 
     if (!existingID) {
-      return res.status(400).json({ Error: "Not found" });
+      return res.status(400).json(new ApiResponce(400,{},"Not Found"));
     }
 
     res.redirect(existingID.redirectURL); // Respond immediately
@@ -62,7 +63,7 @@ const redirectURL = async (req, res) => {
     ]); // Update cache and log visit asynchronously
   } catch (err) {
     console.error(err);
-    res.status(500).json({ Error: "Internal Server Error" });
+    res.status(500).json(new ApiResponce(500,{},"Internal server error"));
   }
 };
 
