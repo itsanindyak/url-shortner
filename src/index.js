@@ -18,21 +18,26 @@ connectDB()
     console.log("MongoDB connection failed!!", error);
   });
 
+export const client = await connectRedis();
+
 process.on("SIGINT", async () => {
   console.log("SIGINT received: Starting cleanup...");
   try {
-    server.close(() => {
-      console.log("Server closed.");
+    await new Promise((resolve, reject) => {
+      server.close((err) => {
+        if (err) reject(err);
+        else {
+          console.log("Server closed.");
+          resolve();
+        }
+      });
     });
-
-    // Perform Redis to DB operation
+    console.log("Redis data saving...");
     await redisToDb();
-    console.log("Redis data saved to database successfully.");
+    console.log("Saved");
   } catch (error) {
     console.error("Error during cleanup:", error);
   } finally {
     process.exit(0);
   }
 });
-
-export const client = await connectRedis();
