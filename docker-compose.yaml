@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  backend:
+    container_name: linkefy
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8400:8400"
+    env_file:
+      - ".env"
+    restart: unless-stopped
