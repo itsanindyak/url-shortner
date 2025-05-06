@@ -8,7 +8,7 @@ COPY package*.json ./
 
 RUN npm install --only=production
 
-COPY src ./
+COPY src ./src
 
 FROM node:slim AS runtime
 
