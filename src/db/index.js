@@ -16,7 +16,7 @@ const connectDB = async () => {
 
 const connectRedis = async () => {
   try {
-    const client = new Redis(process.env.REDIS_DB_PORT);
+    const client = new Redis(process.env.REDIS_DB_URL);
     await new Promise((resolve, reject) => {
       client.on("connect", () => {
         console.log(`Redis connected !! PORT:${process.env.REDIS_DB_PORT}`);
