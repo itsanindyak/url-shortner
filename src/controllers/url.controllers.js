@@ -4,29 +4,47 @@ import { timeNow } from "../utils/date.js";
 import { client } from "../index.js";
 import {ApiResponce} from "../utils/ApiResponce.js"
 
-
 const createShortUrl = async (req, res) => {
   const { redirectURL, id } = req.body;
+
   if (!redirectURL) {
     return res.status(400).json({ error: "Url is required." });
   }
-  let genid, existingID;
-  if (!id) {
-    genid = IDgen(8);
-  } else {
-    existingID = await Url.findOne({ shortID: id });
-    if (existingID) {
-      res.status(400).json(new ApiResponce(400,existingID,"ID already taken."));
+
+  let genid = id || IDgen(8);
+
+  try {
+    if (id) {
+      const existingID = await Url.findOne({ shortID: id });
+      if (existingID) {
+        return res
+          .status(400)
+          .json(new ApiResponce(400, existingID, "ID already taken."));
+      }
     }
+
+    const UrlID = await Url.create({
+      shortID: genid,
+      redirectURL,
+      visitHistory: [],
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponce(200, UrlID, "ShortUrl is generated successfully"));
+
+  } catch (err) {
+    if (err.code === 11000) {
+      // 11000 = duplicate key error
+      return res
+        .status(400)
+        .json(new ApiResponce(400, {"err":"Error in mongo"}, "ID already taken."));
+    }
+    // other unexpected errors
+    return res
+      .status(500)
+      .json(new ApiResponce(500, null, "Server Error"));
   }
-
-  const UrlID = await Url.create({
-    shortID: id || genid,
-    redirectURL,
-    visitHistory: [],
-  });
-
-  return res.status(200).json(new ApiResponce(200,UrlID,"ShortUrl is generated successfully"));
 };
 
 const redirectURL = async (req, res) => {
