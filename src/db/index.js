@@ -13,27 +13,30 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+const connectRedis = async (maxRetries = 5, delay = 3000) => {
+  let attempt = 0;
 
-const connectRedis = async () => {
-  try {
-    const client = new Redis(process.env.REDIS_DB_URL);
-    await new Promise((resolve, reject) => {
-      client.on("connect", () => {
-        console.log(`Redis connected !!`);
-        resolve();
-      });
+  while (attempt < maxRetries) {
+    attempt++;
+    console.log(`🔁 Redis connection attempt ${attempt}...`);
 
-      client.on("error", (error) => {
-        console.error("Redis connection error:", error);
-        reject(error);
-      });
+    const redis = new Redis(process.env.REDIS_URL, {
+      tls: {}, // Required for Aiven
+      lazyConnect: true,
     });
 
-    return client;
-  } catch (error) {
-    console.log("Redis connection error:", error);
-    process.exit(1);
+    try {
+      await redis.connect();
+      console.log("✅ Redis connected");
+      return redis;
+    } catch (error) {
+      console.error(`❌ Redis connection failed:`, error.message);
+      if (attempt === maxRetries) {
+        console.error("🚫 Max retries reached. Exiting.");
+        process.exit(1);
+      }
+      await new Promise(res => setTimeout(res, delay));
+    }
   }
 };
-
 export { connectDB, connectRedis };
